@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cloudflare Platform & Tools"
+  short_description: "Build, configure, and operate Cloudflare Workers, Pages, storage, AI, and infrastructure using Wrangler, cf CLI, and API"
+  default_prompt: "Inspect this Cloudflare task, select the right tool (Wrangler vs cf CLI vs API), review architecture decisions, preview changes with safety guardrails, and verify postconditions."

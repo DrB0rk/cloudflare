@@ -1,4 +1,0 @@
-interface:
-  display_name: "Cloudflare cf CLI"
-  short_description: "Use the new Cloudflare CLI safely across Workers and the entire API"
-  default_prompt: "Inspect this Cloudflare task, discover the current cf commands and API schema, preview changes, and verify the intended account and result."

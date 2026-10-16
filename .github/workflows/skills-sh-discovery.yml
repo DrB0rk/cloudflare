@@ -1,0 +1,33 @@
+name: Skills.sh Discovery Smoke Test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'README.md'
+      - 'skills/cloudflare/**'
+      - '.github/workflows/skills-sh-discovery.yml'
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'skills/cloudflare/**'
+      - '.github/workflows/skills-sh-discovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      DISABLE_TELEMETRY: '1' # CI checks must not inflate installation counts
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public GitHub skill is discoverable by the official Skills CLI
+        run: npx --yes skills add DrB0rk/cloudflare --list

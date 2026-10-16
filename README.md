@@ -19,31 +19,35 @@ This skill equips AI coding agents (OMP, Claude Code, Cursor, Codex, OpenCode, C
 ## Repository Structure
 
 ```
-├── SKILL.md                     # Skill specification and agent instruction set
-├── agents/                      # Agent interface definitions
-│   └── openai.yaml
-├── assets/                      # Workflow examples and CI templates
-│   ├── AGENTS.example.md
-│   └── github-actions-cf.yml
-├── references/                  # Deep-dive guides and playbooks
-│   ├── authentication.md
-│   ├── capability-map.md
-│   ├── ci-cd.md
-│   ├── command-discovery.md
-│   ├── debugging.md
-│   ├── installation.md
-│   ├── resource-playbooks.md
-│   ├── sources.md
-│   ├── typed-config.md
-│   ├── version-drift.md
-│   ├── workers-lifecycle.md
-│   └── wrangler-migration.md
-├── scripts/                     # Deterministic helper tools
-│   ├── cf_discover.py           # Command & documentation discovery
-│   ├── cf_doctor.py             # Secret-redacting environment report
-│   └── cf_guard.py              # Static command preflight
-└── tests/                       # Unit tests for helpers
-    └── test_helpers.py
+├── LICENSE
+├── README.md
+└── skills/
+    └── cloudflare-cf/
+        ├── SKILL.md                     # Skill specification and agent instruction set
+        ├── agents/                      # Agent interface definitions
+        │   └── openai.yaml
+        ├── assets/                      # Workflow examples and CI templates
+        │   ├── AGENTS.example.md
+        │   └── github-actions-cf.yml
+        ├── references/                  # Deep-dive guides and playbooks
+        │   ├── authentication.md
+        │   ├── capability-map.md
+        │   ├── ci-cd.md
+        │   ├── command-discovery.md
+        │   ├── debugging.md
+        │   ├── installation.md
+        │   ├── resource-playbooks.md
+        │   ├── sources.md
+        │   ├── typed-config.md
+        │   ├── version-drift.md
+        │   ├── workers-lifecycle.md
+        │   └── wrangler-migration.md
+        ├── scripts/                     # Deterministic helper tools
+        │   ├── cf_discover.py           # Command & documentation discovery
+        │   ├── cf_doctor.py             # Secret-redacting environment report
+        │   └── cf_guard.py              # Static command preflight
+        └── tests/                       # Unit tests for helpers
+            └── test_helpers.py
 ```
 
 ## Installation
@@ -57,18 +61,15 @@ npx skills add DrB0rk/cloudflare-cf -g
 Symlink or copy into your global skills directories:
 ```bash
 # Agents standard skills directory
-ln -s "/home/drb0rk/Projects/cloudflare-cf" ~/.agents/skills/cloudflare-cf
+ln -s "/home/drb0rk/Projects/cloudflare-cf/skills/cloudflare-cf" ~/.agents/skills/cloudflare-cf
 
 # OMP agent skills directory
-ln -s "/home/drb0rk/Projects/cloudflare-cf" ~/.omp/agent/skills/cloudflare-cf
-```
+ln -s "/home/drb0rk/Projects/cloudflare-cf/skills/cloudflare-cf" ~/.omp/agent/skills/cloudflare-cf
 
 ## Testing
 
 Run unit tests for deterministic helpers:
-```bash
-python3 -m unittest discover tests
-```
+cd skills/cloudflare-cf && python3 -m unittest discover tests
 
 ## License
 

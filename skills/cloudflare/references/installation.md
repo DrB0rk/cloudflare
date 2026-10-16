@@ -1,44 +1,57 @@
-# Installing the skill in coding agents
+# Install the Cloudflare Skill
 
-This ZIP contains one reusable `cloudflare-cf` skill directory. It does **not** install the Cloudflare CLI or authenticate you. Use Node.js **22.18+** and `npm install --global cf` separately, then approve `cf auth login` as a human, or configure a scoped API token for unattended use.
+Use the official [Skills CLI](https://skills.sh/docs/cli) for supported coding agents. This is the same installation method documented in the repository README.
 
-## ChatGPT Skills
+```bash
+npx skills add DrB0rk/cloudflare --skill cloudflare
+```
 
-Upload the provided `skill.zip` through the ChatGPT Skills interface (or your workspace's skill upload mechanism). The skill package includes `SKILL.md`, `agents/openai.yaml`, `references/`, `scripts/` and `assets/`. Access to a real terminal and installed `cf` must be available for command execution; in connector-only chats, retrieval/analysis may be possible but locally executing this CLI is not guaranteed.
+The CLI discovers `skills/cloudflare/SKILL.md` in the public GitHub repository and installs its complete directory. The skill is named **cloudflare**, not the former **cloudflare-cf**. Choose an agent and project/global installation scope when prompted.
 
-## Claude Code
+## Supported installation options
 
-Unpack the `cloudflare-cf` folder to `~/.claude/skills/cloudflare-cf/` or the project's `.claude/skills/cloudflare-cf/`. Optionally copy `assets/AGENTS.example.md` Cloudflare instructions into `CLAUDE.md` after review.
+```bash
+# Global installation
+npx skills add DrB0rk/cloudflare --skill cloudflare -g
 
-## Codex
+# Noninteractive install for Codex (global)
+npx skills add DrB0rk/cloudflare --skill cloudflare --agent codex -g -y
 
-Unpack to `~/.codex/skills/cloudflare-cf/` (or a supported project skill location). Agent tool permissions must allow safe `cf` invocations and prevent unsupervised production changes. Merge the included generic instructions into `AGENTS.md`.
+# List remotely available skills without installing
+npx skills add DrB0rk/cloudflare --list
 
-## Pi / oh-my-pi / OMP
+# Show project-installed or global-installed skills
+npx skills list
+npx skills list -g
+```
 
-Unpack to `~/.pi/agent/skills/cloudflare-cf/` (Cloudflare's agent-skills repository documents this Pi directory). OMP wrappers may change skill paths and enable/disable auto-discovery; verify in the **installed** OMP version rather than assuming identical loading. Keep the Cloudflare CLI accessible on OMP's process PATH and do not include API keys in project agent instructions.
+Compatible coding-agent options include Codex, Claude Code and Pi. The Skills CLI determines their installation paths; do not assume every agent uses `~/.agents/skills` or manually unpack to outdated `cloudflare-cf` paths. Restart or reload the agent if needed.
 
-## OpenCode
+## Verify the installed files
 
-Unpack to `~/.config/opencode/skills/cloudflare-cf/` (as documented by Cloudflare's skills repository); follow your installed tool's skill-loading conventions.
+Locate the installed `cloudflare` directory displayed by the CLI. It must contain `SKILL.md`, `agents/openai.yaml`, `references/`, `scripts/`, and `tests/`. From inside that directory run:
 
-## Generic AGENTS.md instruction
+```bash
+python3 scripts/skill_lint.py --root .
+python3 -m unittest discover -s tests -v
+```
 
-Copy or adapt `assets/AGENTS.example.md` into user- or project-level agent instructions. Important point: do not install Wrangler in a new `cf` project, and do not run build-backed `cf` commands on an unmigrated Wrangler project.
+The checks do not require Cloudflare credentials or change remote resources. Continuous integration also performs genuine Skills CLI installs and runs tests against the installed copy.
 
-## Test after installation
+## Skill versus Cloudflare CLI
+
+Installing this skill **does not** install Cloudflare's `cf` CLI, deploy software or grant Cloudflare account access. To run new `cf` commands locally, install that CLI separately with Node.js >=22.18 (for the current beta):
 
 ```bash
 node --version
 npm install --global cf
 cf --version
-cf cli search "list DNS records"
-cf docs search "how to configure a Worker"
-python3 scripts/cf_doctor.py --cwd .
-python3 scripts/cf_discover.py "create a D1 database" --inspect
-python3 -m unittest discover -s tests -v
 ```
 
-`cf cli search` does not need credentials. `cf docs search` requires external documentation lookup but not Cloudflare OAuth. Running the helpers with `--inspect` only calls read-only command/schema/help introspection.
+For interactive account access, a person may run `cf auth login`; for unattended workflows use scoped API tokens from a secrets manager. The skill also supports existing Wrangler/IaC setups and Cloudflare connectors without forcing a migration.
 
-Reference directory guidance: https://github.com/cloudflare/skills ; https://developers.cloudflare.com/cf/agents/
+## Unsupported installers
+
+If an environment (including ChatGPT skill uploads) cannot invoke the Skills CLI, package or copy the entire `skills/cloudflare/` directory using that environment's documented skill-loading mechanism. This is a fallback; do not package the repository root as the skill.
+
+Sources: https://skills.sh/docs/cli ; https://github.com/vercel-labs/skills ; https://developers.cloudflare.com/cf/

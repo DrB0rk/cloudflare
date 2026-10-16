@@ -1,4 +1,4 @@
 interface:
-  display_name: "Cloudflare Platform & Tools"
-  short_description: "Build, configure, and operate Cloudflare Workers, Pages, storage, AI, and infrastructure using Wrangler, cf CLI, and API"
-  default_prompt: "Inspect this Cloudflare task, select the right tool (Wrangler vs cf CLI vs API), review architecture decisions, preview changes with safety guardrails, and verify postconditions."
+  display_name: "Cloudflare Platform & cf CLI"
+  short_description: "Cloudflare platform operations defaulting to the new agent-oriented cf CLI, with deep architecture, docs discovery, and fallback to Wrangler"
+  default_prompt: "Inspect this Cloudflare task, defaulting always to the agent-oriented cf CLI for resources and typed Workers projects, query live Cloudflare docs, preview changes with safety guardrails, and verify remote postconditions."

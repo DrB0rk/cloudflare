@@ -33,7 +33,7 @@ npx skills add DrB0rk/cloudflare --skill cloudflare -g
 
 The installable entrypoint is **skills/cloudflare/SKILL.md**. Do not install the repository root as a skill; install the directory containing SKILL.md.
 
-The global CLI installation command above is recommended. Alternatively, symlink the subdirectory to your coding agent's supported skills location, for example:
+The Skills CLI command at the top of this README is the recommended installation method. Select project or global scope in the installer. To verify after installation, use `npx skills list` (project) or `npx skills list -g` (global). Manual symlinks are only a fallback:
 
     ln -s /path/to/cloudflare/skills/cloudflare ~/.agents/skills/cloudflare
 

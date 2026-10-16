@@ -1,5 +1,25 @@
 # Cloudflare — senior engineering skill for AI agents
 
+[![skills.sh install count](https://skills.sh/b/DrB0rk/cloudflare)](https://skills.sh/DrB0rk/cloudflare)
+
+## Install with the Skills CLI
+
+Install the public, independently maintained `cloudflare` skill from this repository:
+
+```bash
+npx skills add DrB0rk/cloudflare --skill cloudflare
+```
+
+To inspect discovery before installation or install across projects:
+
+```bash
+npx skills add DrB0rk/cloudflare --list
+npx skills add DrB0rk/cloudflare --skill cloudflare -g
+```
+
+**skills.sh listing:** No submission form or special publishing command exists. Public skills become eligible for the [skills.sh directory](https://skills.sh/) through genuine installations with the `skills` CLI's optional anonymous telemetry. An installable repository is not necessarily indexed or visible in search immediately. Follow the [publishing guide](https://vercel.com/kb/guide/agent-skills-creating-installing-and-sharing-reusable-agent-context) and [FAQ](https://skills.sh/docs/faq). This is a community skill and is not affiliated with or endorsed by Cloudflare. Cloudflare API credentials are configured separately and are never required for the skill installation itself.
+
+
 A reusable Cloudflare platform engineering skill covering design, development, security, performance, operations and resource administration. It integrates Cloudflare's new cf CLI, existing Wrangler workflows, official documentation, Cloudflare connectors and Terraform/Pulumi without forcing a tool migration.
 
 ## What it teaches an agent
@@ -16,7 +36,7 @@ The installable entrypoint is **skills/cloudflare/SKILL.md**. Do not install the
 
 Using a compatible skills installer:
 
-    npx skills add DrB0rk/cloudflare -g
+    npx skills add DrB0rk/cloudflare --skill cloudflare -g
 
 Or symlink the subdirectory to your coding agent's supported skills location, for example:
 

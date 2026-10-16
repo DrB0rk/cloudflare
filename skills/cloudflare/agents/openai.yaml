@@ -1,4 +1,4 @@
 interface:
-  display_name: "Cloudflare Platform & cf CLI"
-  short_description: "Cloudflare platform operations defaulting to the new agent-oriented cf CLI, with deep architecture, docs discovery, and fallback to Wrangler"
-  default_prompt: "Inspect this Cloudflare task, defaulting always to the agent-oriented cf CLI for resources and typed Workers projects, query live Cloudflare docs, preview changes with safety guardrails, and verify remote postconditions."
+  display_name: "Cloudflare Platform Engineering"
+  short_description: "Senior Cloudflare architecture, security, development, SRE and operations across cf, Wrangler and IaC."
+  default_prompt: "Analyze my Cloudflare task like a senior platform and security engineer. Inspect scope and source of truth, verify current official docs and command schemas, select the right architecture/tooling, apply least-privilege guardrails, test changes, and verify outcomes."

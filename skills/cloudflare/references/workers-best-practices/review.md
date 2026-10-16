@@ -91,13 +91,13 @@ Old patterns survive in codebases long after APIs change.
 
 ### Required fields
 
-For executable examples, verify: `name`, `compatibility_date`, `main`. Check the schema for current required fields.
+For executable examples verify required fields against the active config schema. Wrangler often uses name, compatibility_date and main; cf typed projects use different field names and binding declarations. Assets-only projects may have different entrypoint requirements.
 
 ### Config format
 
-- **JSONC** (`wrangler.jsonc`) — preferred for new projects
-- **JSON** (`wrangler.json`) — valid but no comments
-- **TOML** (`wrangler.toml`) — legacy; acceptable in existing content, flag in new projects
+- **cloudflare.config.ts** — for supported modern cf projects; use cf/config types and cf workers types.
+- **wrangler.jsonc/json/toml** — supported in existing Wrangler projects; do not force migration.
+- Confirm the project's actual build/deploy tool and documented schema before flagging a config format.
 
 ### Binding-code consistency
 
@@ -110,12 +110,12 @@ For executable examples, verify: `name`, `compatibility_date`, `main`. Check the
 
 | Check | What to look for |
 |-------|-----------------|
-| Stale `compatibility_date` | Should be recent; use `$today` placeholder in docs |
-| Missing DO migrations | Every new DO class needs a migration entry |
+| Compatibility date | Current for new apps; changes to existing apps require regression tests and intentional rollout |
+| DO lifecycle | Verify existing Wrangler migrations or cf typed exports/storage lifecycle; preserve production data |
 | Binding name mismatch | Config `binding`/`name` must match `env.X` in code |
-| Secrets in config | Never in `vars` — use `wrangler secret put` |
+| Secrets in config | Never in public vars — use project's supported secret binding mechanism |
 | Wrong binding key | Verify top-level key name against the schema |
-| Missing entrypoint | `main` required for executable Workers |
+| Missing entrypoint | Verify active toolchain, Worker type and assets-only exceptions |
 
 ---
 

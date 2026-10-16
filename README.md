@@ -37,7 +37,7 @@ This skill incorporates deep architectural knowledge of Cloudflare's global edge
 * **Smart Placement**: Automatically moves Worker execution adjacent to backend database origins when cross-continental backend latency exceeds user edge latency.
 * **Workflows Engine**: Multi-step stateful durable executions with automatic retries, exponential backoff, and arbitrary sleep periods.
 
-*See [`references/architecture-deep-dive.md`](skills/cloudflare/references/architecture-deep-dive.md) for full architectural documentation.*
+*See [`references/principal-systems-internals.md`](skills/cloudflare/references/principal-systems-internals.md) for full systems-level internals and [`references/architecture-deep-dive.md`](skills/cloudflare/references/architecture-deep-dive.md) for platform architecture.*
 
 ---
 

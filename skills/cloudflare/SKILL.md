@@ -209,3 +209,12 @@ wrangler deploy
    - *Memory Buffering*: Never buffer large files into memory; stream via `TransformStream`.
    - *Global State*: Never mutate global variables across requests; isolates are ephemeral. Use Durable Objects for stateful coordination.
    - *Compatibility Dates*: Always set `compatibility_date` to a recent date (<30 days) and specify `"nodejs_compat"` when using Node standard modules.
+
+---
+
+## 7. Deep Systems Reference & Senior Architecture Manual
+
+For senior-level and principal engineering tasks, consult the complete architectural references:
+- **Systems Internals**: [`references/principal-systems-internals.md`](references/principal-systems-internals.md) (V8 pointer compression, KJ/Cap'n Proto zero-copy RPC, Unimog L4 LB, XDP/eBPF kernel bypass, BBR congestion control, Durable Objects consensus leases, WAL-mode SQLite, and Workflows state memoization).
+- **Architecture Deep Dive**: [`references/architecture-deep-dive.md`](references/architecture-deep-dive.md) (Anycast edge topology, isolate lifecycle, Smart Placement, and storage consistency).
+- **Docs Retrieval Protocol**: [`references/docs-retrieval.md`](references/docs-retrieval.md) (Live CLI docs search, schema discovery, and compatibility flags).

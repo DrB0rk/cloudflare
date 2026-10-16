@@ -140,10 +140,11 @@ For authorized changes:
 6. Confirm remote state and end-to-end outcome independently. Monitor security, errors, latency and costs.
 7. Report exact changes, verification result, residual risk and any unknowns. Never claim success if verification did not complete.
 
-Local advisory tools (not security boundaries):
+Local advisory tools (not security boundaries): locate this installed `SKILL.md` first. Scripts are bundled with the skill, so running `python3 scripts/...` from an arbitrary application repository would fail.
 
-    python3 scripts/cf_doctor.py --cwd .
-    python3 scripts/cf_discover.py "list D1 databases" --inspect
-    python3 scripts/cf_guard.py --cwd . -- cf deploy --dry-run
+    SKILL_DIR="/absolute/path/to/installed/cloudflare"
+    python3 "$SKILL_DIR/scripts/cf_doctor.py" --cwd "$PWD"
+    python3 "$SKILL_DIR/scripts/cf_discover.py" "list D1 databases" --inspect
+    python3 "$SKILL_DIR/scripts/cf_guard.py" --cwd "$PWD" -- cf deploy --dry-run
 
-Use the helpers to reduce mistakes, never to authorize an otherwise unsafe action. For detailed review, use [quality-gates.md](references/quality-gates.md) and [architecture-recipes.md](references/architecture-recipes.md).
+Resolve `SKILL_DIR` using your agent's installed skill path; it is not an automatically populated variable. Keep `--cwd` pointed to the actual project. Use helpers to reduce mistakes, not to authorize unsafe changes. For detailed review, use [quality-gates.md](references/quality-gates.md) and [architecture-recipes.md](references/architecture-recipes.md).

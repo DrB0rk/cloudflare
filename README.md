@@ -4,20 +4,23 @@
 
 A reusable Cloudflare platform engineering skill covering design, development, security, performance, operations and resource administration. It integrates Cloudflare's new cf CLI, existing Wrangler workflows, official documentation, Cloudflare connectors and Terraform/Pulumi without forcing a tool migration.
 
-## Install with the Skills CLI
+## Install
 
-Install the public, independently maintained `cloudflare` skill from this repository:
+**Recommended:** Install the public `cloudflare` skill using the official [Skills CLI](https://skills.sh/docs/cli):
 
 ```bash
 npx skills add DrB0rk/cloudflare --skill cloudflare
 ```
 
-To inspect discovery before installation or install across projects:
+The installer selects a supported agent and an installation scope interactively. To install globally, target a particular agent, or inspect the public skill:
 
 ```bash
 npx skills add DrB0rk/cloudflare --list
 npx skills add DrB0rk/cloudflare --skill cloudflare -g
+npx skills add DrB0rk/cloudflare --skill cloudflare --agent codex -g -y
 ```
+
+To verify, run `npx skills list` for project installations or `npx skills list -g` for global installations. Restart your coding agent if needed; the Skills CLI manages the agent-specific directory. No manual symlinks or cloning are needed.
 
 **skills.sh listing:** No submission form or special publishing command exists. Public skills become eligible for the [skills.sh directory](https://skills.sh/) through genuine installations with the `skills` CLI's optional anonymous telemetry. An installable repository is not necessarily indexed or visible in search immediately. Follow the [publishing guide](https://vercel.com/kb/guide/agent-skills-creating-installing-and-sharing-reusable-agent-context) and [FAQ](https://skills.sh/docs/faq). This is a community skill and is not affiliated with or endorsed by Cloudflare. Cloudflare API credentials are configured separately and are never required for the skill installation itself.
 
@@ -29,16 +32,20 @@ npx skills add DrB0rk/cloudflare --skill cloudflare -g
 - **Practical execution:** live cf command/schema/docs lookup; version-sensitive config verification; full verification after changes; preservation of existing Wrangler and IaC workflows.
 - **Product catalog:** detailed product references across the existing Cloudflare families plus senior cross-cutting technical guides.
 
-## Agent-specific installation
+## Validate the installed skill
 
-The installable entrypoint is **skills/cloudflare/SKILL.md**. Do not install the repository root as a skill; install the directory containing SKILL.md.
+The install command above is the primary method; do not manually unpack or symlink this repository unless your agent does not support the Skills CLI. The installer should find exactly one skill named `cloudflare` (see [installation details](skills/cloudflare/references/installation.md)).
 
-The Skills CLI command at the top of this README is the recommended installation method. Select project or global scope in the installer. To verify after installation, use `npx skills list` (project) or `npx skills list -g` (global). Manual symlinks are only a fallback:
+From the installed `cloudflare` directory reported by the CLI, run:
 
-    ln -s /path/to/cloudflare/skills/cloudflare ~/.agents/skills/cloudflare
+```bash
+python3 scripts/skill_lint.py --root .
+python3 -m unittest discover -s tests -v
+```
 
-For ChatGPT, package the **skills/cloudflare/** directory as one skill ZIP using a validator before upload. See your agent's local skill setup instructions; folder names and discovery conventions differ between runtimes.
+These checks run offline. The [CI installation workflow](.github/workflows/skills-sh-discovery.yml) also tests genuine installs for Codex, Claude Code, and Pi and verifies all installed references and scripts.
 
+Installing the skill does **not** install Cloudflare's separate `cf` CLI or authenticate to a Cloudflare account. Use Node.js >=22.18 and install `cf` separately when necessary; no Cloudflare API key is required for skill installation.
 ## Essential workflows
 
 **Explore a Cloudflare architecture:** read SKILL.md -> references/decision-framework.md -> relevant product reference -> security-baseline.md -> production-delivery.md.

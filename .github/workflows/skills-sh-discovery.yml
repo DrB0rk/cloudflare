@@ -1,4 +1,4 @@
-name: Skills.sh Discovery Smoke Test
+name: Skills CLI Discovery and Install
 
 on:
   push:
@@ -22,12 +22,91 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     env:
-      DISABLE_TELEMETRY: '1' # CI checks must not inflate installation counts
+      DISABLE_TELEMETRY: '1'
       CI: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      - name: Verify public GitHub skill is discoverable by the official Skills CLI
+          node-version: '22.18.0'
+      - name: Discover public repository skill
         run: npx --yes skills add DrB0rk/cloudflare --list
+
+  install:
+    name: Install ${{ matrix.agent }} / ${{ matrix.scope }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - agent: codex
+            scope: project
+          - agent: claude-code
+            scope: global
+          - agent: pi
+            scope: global
+    env:
+      DISABLE_TELEMETRY: '1'
+      CI: 'true'
+      TEST_AGENT: ${{ matrix.agent }}
+      TEST_SCOPE: ${{ matrix.scope }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run actual Skills CLI installation and check installed files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test_root="$(mktemp -d "$RUNNER_TEMP/cloudflare-skill.XXXXXX")"
+          export HOME="$test_root/home"
+          export npm_config_cache="$test_root/npm-cache"
+          mkdir -p "$HOME" "$test_root/project"
+          cd "$test_root/project"
+          git init -q
+          printf '{"name":"cloudflare-install-smoke","private":true}\n' > package.json
+
+          if [[ "$TEST_SCOPE" == "global" ]]; then
+            npx --yes skills add DrB0rk/cloudflare --skill cloudflare --agent "$TEST_AGENT" -g -y
+            expected_scope="$HOME"
+          else
+            npx --yes skills add DrB0rk/cloudflare --skill cloudflare --agent "$TEST_AGENT" -y
+            expected_scope="$PWD"
+          fi
+
+          skill_file="$(find -L "$expected_scope" -type f -path '*/skills/cloudflare/SKILL.md' -print -quit)"
+          if [[ -z "$skill_file" ]]; then
+            echo "::error::Installed cloudflare/SKILL.md not found in expected scope"
+            find -L "$expected_scope" -name SKILL.md -print
+            exit 1
+          fi
+          skill_dir="$(dirname "$skill_file")"
+          echo "Installed skill: $skill_dir"
+          test -f "$skill_dir/agents/openai.yaml"
+          test -f "$skill_dir/references/service-index.md"
+          test -f "$skill_dir/references/security-baseline.md"
+          test -f "$skill_dir/scripts/cf_discover.py"
+          test -f "$skill_dir/scripts/cf_doctor.py"
+          test -f "$skill_dir/scripts/cf_guard.py"
+          test -f "$skill_dir/tests/test_helpers.py"
+
+          python3 "$skill_dir/scripts/skill_lint.py" --root "$skill_dir"
+          python3 -m compileall -q "$skill_dir/scripts" "$skill_dir/tests"
+          python3 -m unittest discover -s "$skill_dir/tests" -v
+
+          export INSTALLED_SKILL_DIR="$skill_dir"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          root = Path(os.environ["INSTALLED_SKILL_DIR"])
+          doc = (root / "SKILL.md").read_text(encoding="utf-8")
+          assert doc.startswith("---\nname: cloudflare\n"), "Invalid SKILL.md frontmatter"
+          product_docs = list((root / "references").glob("*/README.md"))
+          assert len(product_docs) >= 63, f"Missing product references: {len(product_docs)}"
+          print(f"Verified {len(product_docs)} product references and all helper tests")
+          PY

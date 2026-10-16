@@ -12,37 +12,11 @@
 
 ## Example GitHub Actions pipeline
 
-Copy and adapt `assets/github-actions-cf.yml` to `.github/workflows/cloudflare.yml`. The example is deliberately scoped to one Worker with npm and production Vite mode. The `push` step that deploys should use a protected branch/environment and verified account.
+Use the maintained `assets/github-actions-cf.yml` template (relative to the skill root) rather than copying an old YAML snippet. Configure a production environment requiring approval before enabling deployment. The example distinguishes pull-request builds from **manual** `workflow_dispatch` production releases; it must not deploy automatically on every push to `main`.
 
-```yaml
-name: Cloudflare Worker
-on:
-  pull_request:
-  push:
-    branches: [main]
-jobs:
-  worker:
-    runs-on: ubuntu-latest
-    env:
-      CF_SEND_TELEMETRY: "false"
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: '22.18.0'
-          cache: npm
-      - run: npm ci
-      - run: npx cf build
-      - run: npx cf deploy --prebuilt --mode production --dry-run
-      - if: github.event_name == 'push'
-        run: npx cf deploy --prebuilt --mode production --no-provision
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-```
+Review the pinned `cf` CLI version, the actual `cloudflare.config.ts` build output, the project mode, required secret scopes, and `--no-provision` compatibility. Limit API tokens to the deployment job and never expose secrets on untrusted pull requests. For high-assurance repositories, pin external GitHub Actions to reviewed commit SHAs.
 
-This is a **template**, not a workflow activated by installing the skill. Review `--no-provision` availability on pinned CLI, minimum permissions for the actual bindings, worker metadata and trigger requirements before enabling production deployment.
-
+This template is an example, **not** a workflow installed or executed by the Skills CLI. Simply running `npx skills add DrB0rk/cloudflare --skill cloudflare` only installs agent instructions.
 ## Secrets and noninteractive behavior
 
 `cf auth login` requires a human browser approval and must not be used in CI. If credentials can see multiple accounts without explicit account selection, noninteractive `cf` fails. For account/zone resource jobs, set both account and zone explicitly.

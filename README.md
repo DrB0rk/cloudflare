@@ -2,6 +2,8 @@
 
 [![skills.sh install count](https://skills.sh/b/DrB0rk/cloudflare)](https://skills.sh/DrB0rk/cloudflare)
 
+A reusable Cloudflare platform engineering skill covering design, development, security, performance, operations and resource administration. It integrates Cloudflare's new cf CLI, existing Wrangler workflows, official documentation, Cloudflare connectors and Terraform/Pulumi without forcing a tool migration.
+
 ## Install with the Skills CLI
 
 Install the public, independently maintained `cloudflare` skill from this repository:
@@ -19,9 +21,6 @@ npx skills add DrB0rk/cloudflare --skill cloudflare -g
 
 **skills.sh listing:** No submission form or special publishing command exists. Public skills become eligible for the [skills.sh directory](https://skills.sh/) through genuine installations with the `skills` CLI's optional anonymous telemetry. An installable repository is not necessarily indexed or visible in search immediately. Follow the [publishing guide](https://vercel.com/kb/guide/agent-skills-creating-installing-and-sharing-reusable-agent-context) and [FAQ](https://skills.sh/docs/faq). This is a community skill and is not affiliated with or endorsed by Cloudflare. Cloudflare API credentials are configured separately and are never required for the skill installation itself.
 
-
-A reusable Cloudflare platform engineering skill covering design, development, security, performance, operations and resource administration. It integrates Cloudflare's new cf CLI, existing Wrangler workflows, official documentation, Cloudflare connectors and Terraform/Pulumi without forcing a tool migration.
-
 ## What it teaches an agent
 
 - **Architecture judgment:** choose Workers, Pages, Static Assets, D1, KV, R2, Durable Objects, Hyperdrive, Queues, Workflows, AI and private networking using latency, consistency, cost, availability and recovery requirements.
@@ -30,15 +29,11 @@ A reusable Cloudflare platform engineering skill covering design, development, s
 - **Practical execution:** live cf command/schema/docs lookup; version-sensitive config verification; full verification after changes; preservation of existing Wrangler and IaC workflows.
 - **Product catalog:** detailed product references across the existing Cloudflare families plus senior cross-cutting technical guides.
 
-## Installation
+## Agent-specific installation
 
 The installable entrypoint is **skills/cloudflare/SKILL.md**. Do not install the repository root as a skill; install the directory containing SKILL.md.
 
-Using a compatible skills installer:
-
-    npx skills add DrB0rk/cloudflare --skill cloudflare -g
-
-Or symlink the subdirectory to your coding agent's supported skills location, for example:
+The global CLI installation command above is recommended. Alternatively, symlink the subdirectory to your coding agent's supported skills location, for example:
 
     ln -s /path/to/cloudflare/skills/cloudflare ~/.agents/skills/cloudflare
 

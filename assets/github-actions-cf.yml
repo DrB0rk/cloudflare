@@ -1,0 +1,26 @@
+name: Cloudflare Worker
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CF_SEND_TELEMETRY: "false"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22.18.0'
+          cache: npm
+      - run: npm ci
+      - run: npx cf build
+      - run: npx cf deploy --prebuilt --mode production --dry-run
+      # Protect main and require environment approvals before enabling production.
+      - if: github.event_name == 'push'
+        run: npx cf deploy --prebuilt --mode production --no-provision
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

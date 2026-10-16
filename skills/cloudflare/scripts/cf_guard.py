@@ -87,7 +87,7 @@ def assess(argv: list[str], cwd: Path) -> dict:
     if wrangler_blocked:
         notes.append("BLOCKED: build-backed cf command in a Wrangler-only project; migrate deliberately or use Wrangler.")
     if is_wrangler:
-        notes.append("Tool Precedence Notice: 'cf' is Cloudflare's primary CLI. Wrangler should only be used as a last resort fallback for legacy unmigrated projects.")
+        notes.append("Tool selection: use Wrangler when it is the established project workflow; use cf for supported typed projects and public API operations. Preserve IaC ownership.")
         if state["kind"] == "cf-configured" and segments and segments[0] in ("deploy", "build"):
             notes.append("Note: cloudflare.config.ts present. Check whether project standard is cf CLI instead of Wrangler.")
     if state["kind"] == "unconfigured" and (buildbacked or (is_wrangler and segments and segments[0] in ("dev", "deploy"))):

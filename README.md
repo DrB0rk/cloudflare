@@ -1,157 +1,65 @@
-# cloudflare
+# Cloudflare — senior engineering skill for AI agents
 
-> Comprehensive Cloudflare platform skill for AI coding agents. **Defaults always to Cloudflare's new agent-oriented `cf` CLI**, using Wrangler strictly as a last-resort fallback for legacy projects. Covers global edge architecture, live documentation discovery, V8 isolates, request lifecycle, distributed storage, AI, Zero Trust tunnels, and deterministic safety guardrails.
+A reusable Cloudflare platform engineering skill covering design, development, security, performance, operations and resource administration. It integrates Cloudflare's new cf CLI, existing Wrangler workflows, official documentation, Cloudflare connectors and Terraform/Pulumi without forcing a tool migration.
 
----
+## What it teaches an agent
 
-## 1. Tool Precedence: Default to `cf`
+- **Architecture judgment:** choose Workers, Pages, Static Assets, D1, KV, R2, Durable Objects, Hyperdrive, Queues, Workflows, AI and private networking using latency, consistency, cost, availability and recovery requirements.
+- **Security engineering:** least privilege, scoped API tokens, identity/access policies, WAF/DDoS/Bot/API Shield, TLS Full (strict), origin isolation, Turnstile validation, input security, tenant boundaries, prompt/tool injection protections and audit trails.
+- **Production operations:** SLOs, observability, incident runbooks, CI/CD, staging/canary rollouts, IaC drift, migrations, rollback and FinOps.
+- **Practical execution:** live cf command/schema/docs lookup; version-sensitive config verification; full verification after changes; preservation of existing Wrangler and IaC workflows.
+- **Product catalog:** detailed product references across the existing Cloudflare families plus senior cross-cutting technical guides.
 
-```
-┌────────────────────────────────────────────────────────┐
-│  PRIMARY / DEFAULT: `cf` CLI (Cloudflare Agent CLI)    │
-│  - 2,900+ OpenAPI commands with live search & schema   │
-│  - Live Cloudflare Docs search (cf docs search)        │
-│  - Typed Workers projects (cloudflare.config.ts)       │
-│  - All resource & zone operations (DNS, D1, R2, WAF)   │
-└──────────────────────────┬─────────────────────────────┘
-                           │
-                           ▼ (Only when project is unmigrated)
-┌────────────────────────────────────────────────────────┐
-│  FALLBACK ONLY: `wrangler` CLI                         │
-│  - Strictly for legacy unmigrated projects             │
-│    (wrangler.jsonc / wrangler.toml)                    │
-│  - Recommend intentional migration to cf               │
-└────────────────────────────────────────────────────────┘
-```
+## Installation
 
----
+The installable entrypoint is **skills/cloudflare/SKILL.md**. Do not install the repository root as a skill; install the directory containing SKILL.md.
 
-## 2. Cloudflare Architecture & Execution Model
+Using a compatible skills installer:
 
-This skill incorporates deep architectural knowledge of Cloudflare's global edge:
+    npx skills add DrB0rk/cloudflare -g
 
-* **Global Anycast Network**: 330+ edge datacenters (colos) announce the same BGP IP block. Traffic automatically terminates at the topologically closest datacenter to the user.
-* **V8 Isolates vs Containers (`workerd`)**: Cloudflare Workers execute as lightweight Google V8 engine isolates inside single processes. Startup/cold start is **< 5ms** (effectively zero) with a **~3MB memory baseline**, compared to 200ms–2s cold starts and 50MB+ overhead for Docker/Lambda containers.
-* **Bindings as Zero-Overhead RPC**: Resource bindings (`env.DB`, `env.KV`, `env.R2`, `env.AI`) operate via in-process memory or local socket IPC. No TCP handshakes, external HTTP calls, or credentials exposed in code.
-* **Durable Objects**: Globally unique actor instances with strongly consistent embedded SQLite storage (`ctx.storage.sql`) and WebSocket connection hibernation.
-* **Smart Placement**: Automatically moves Worker execution adjacent to backend database origins when cross-continental backend latency exceeds user edge latency.
-* **Workflows Engine**: Multi-step stateful durable executions with automatic retries, exponential backoff, and arbitrary sleep periods.
+Or symlink the subdirectory to your coding agent's supported skills location, for example:
 
-*See [`references/principal-systems-internals.md`](skills/cloudflare/references/principal-systems-internals.md) for full systems-level internals and [`references/architecture-deep-dive.md`](skills/cloudflare/references/architecture-deep-dive.md) for platform architecture.*
+    ln -s /path/to/cloudflare/skills/cloudflare ~/.agents/skills/cloudflare
 
----
+For ChatGPT, package the **skills/cloudflare/** directory as one skill ZIP using a validator before upload. See your agent's local skill setup instructions; folder names and discovery conventions differ between runtimes.
 
-## 3. Live Documentation & Schema Retrieval
+## Essential workflows
 
-**Never hallucinate API signatures, endpoint flags, or limits.** Coding agents must discover live schemas and documentation:
+**Explore a Cloudflare architecture:** read SKILL.md -> references/decision-framework.md -> relevant product reference -> security-baseline.md -> production-delivery.md.
 
-1. **Live Docs Search**:
-   ```bash
-   cf docs search "how to configure D1 database"
-   python3 skills/cloudflare/scripts/cf_discover.py "D1 database" --docs
-   ```
-2. **OpenAPI Schema Discovery**:
-   ```bash
-   cf schema d1 create
-   python3 skills/cloudflare/scripts/cf_discover.py "create D1 database" --inspect
-   ```
-3. **Command Discovery**:
-   ```bash
-   cf cli search "create DNS record"
-   ```
-4. **Authoritative Sources**:
-   * Developer Documentation: `https://developers.cloudflare.com/`
-   * Platform Changelog: `https://developers.cloudflare.com/changelog/`
+**Review a security posture:** references/security-baseline.md -> worker-security.md or zero-trust-security.md -> quality-gates.md. No automatic production mutations.
 
-*See [`references/docs-retrieval.md`](skills/cloudflare/references/docs-retrieval.md) for live retrieval protocol.*
+**Operate existing Workers:** identify cloudflare.config.ts vs wrangler.jsonc/toml and IaC ownership. For cf-ready projects:
 
----
+    cf --version
+    cf cli search "list D1 databases"
+    cf docs search "D1 session read replication"
 
-## 4. Product & Feature Matrix
+For Wrangler-only applications, keep existing Wrangler dev/build/deploy until deliberately migrated. For IaC-owned account resources, edit plan/apply through the IaC owner rather than creating hidden drift.
 
-The skill includes deep reference playbooks across **76 product categories**:
+**Run local helper tests** (no Cloudflare credentials necessary):
 
-* **Compute & Execution**: Workers, Pages, Durable Objects, Workflows, Containers, Cron Triggers, Snippets, Tail Workers.
-* **Storage & Data**: D1 (distributed SQL), KV, R2 (zero-egress object storage), Hyperdrive (Postgres/MySQL accelerator), Queues, Vectorize, Secrets Store.
-* **AI & Machine Learning**: Workers AI (Llama 3, Mistral, Whisper, embeddings), Agents SDK, AI Gateway, AI Search.
-* **Networking & Ingress**: Cloudflare Tunnels (`cf` / `cloudflared` named & quick tunnels), Spectrum (TCP/UDP proxy), TURN relay, Argo Smart Routing.
-* **Security**: Web Application Firewall (WAF), Managed Rulesets, Rate Limiting, Bot Management, API Shield, Turnstile (invisible CAPTCHA).
+    cd skills/cloudflare
+    python3 -m unittest discover tests
 
----
+## Organization
 
-## 5. Repository Structure
+- skills/cloudflare/SKILL.md — agent control plane and task routing
+- skills/cloudflare/references/ — architectural, security, operational and product-specific references
+- skills/cloudflare/scripts/ — read-only discovery and advisory command diagnostics
+- skills/cloudflare/tests/ — deterministic regression tests
+- skills/cloudflare/assets/ — templates for working in repositories
 
-```
-├── LICENSE
-├── README.md
-└── skills/
-    └── cloudflare/
-        ├── SKILL.md                     # Master specification, architecture, and cf-first directives
-        ├── agents/                      # Agent interface definitions
-        │   └── openai.yaml
-        ├── assets/                      # Workflow templates
-        │   ├── AGENTS.example.md
-        │   ├── github-actions-cf.yml
-        │   └── github-actions-wrangler.yml
-        ├── references/                  # Deep-dive library across 76 categories
-        │   ├── architecture-deep-dive.md# Global Anycast, V8 isolates, request lifecycle, RPC
-        │   ├── docs-retrieval.md        # Protocol for cf docs search and live schema retrieval
-        │   ├── command-discovery.md     # cf cli search and dynamic discovery
-        │   ├── typed-config.md          # cloudflare.config.ts reference
-        │   ├── wrangler-migration.md    # Step-by-step migration from Wrangler to cf
-        │   ├── workers/
-        │   ├── d1/
-        │   ├── r2/
-        │   ├── kv/
-        │   ├── vectorize/
-        │   ├── workers-ai/
-        │   ├── tunnel/
-        │   └── ...
-        ├── scripts/                     # Deterministic helper tools
-        │   ├── cf_discover.py           # Command, schema & docs discovery
-        │   ├── cf_doctor.py             # Secret-redacting environment diagnostic
-        │   └── cf_guard.py              # Static command preflight
-        └── tests/                       # Unit tests
-            └── test_helpers.py
-```
+## Truth and safety
 
----
+This is an independent skill, not official Cloudflare documentation. Platform features, beta cf syntax, prices, limits, permissions, availability and security behavior may change. The agent must verify critical claims in official docs and installed CLI help, scope credentials, review blast radius, protect secrets and verify mutations. Advisory scripts do not grant permission to execute changes.
 
-## 6. Installation
+Core official references:
+- https://developers.cloudflare.com/
+- https://developers.cloudflare.com/cf/
+- https://developers.cloudflare.com/cf/agents/
+- https://developers.cloudflare.com/workers/best-practices/workers-best-practices/
+- https://developers.cloudflare.com/fundamentals/api/get-started/
 
-### Via `skills` CLI
-```bash
-npx skills add DrB0rk/cloudflare -g
-```
-
-### Manual / Symlink
-```bash
-# Universal agents standard skills directory (Cursor, Claude Code, Cline, etc.)
-ln -s "/home/drb0rk/Projects/cloudflare/skills/cloudflare" ~/.agents/skills/cloudflare
-
-# OMP agent skills directory
-ln -s "/home/drb0rk/Projects/cloudflare/skills/cloudflare" ~/.omp/agent/skills/cloudflare
-```
-
----
-
-## 7. Deterministic Helpers
-
-* **`cf_doctor.py`**: Local environment inspection (detects Node, `cf` CLI, Wrangler, `cloudflared`, project config, and redacts secrets).
-* **`cf_guard.py`**: Static preflight assessing proposed commands, flagging destructive actions (`delete`, `purge`), unvetted `--force` flags, and notifying if Wrangler is used instead of `cf`.
-* **`cf_discover.py`**: Discovery helper executing `cf cli search`, `cf docs search`, schema checks, and `--help` queries without shell injection risk.
-
----
-
-## 8. Testing
-
-Run unit tests:
-```bash
-cd skills/cloudflare && python3 -m unittest discover tests
-```
-
----
-
-## License
-
-[MIT](LICENSE) © 2026 DrB0rk
+MIT license; see LICENSE.

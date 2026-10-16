@@ -1,220 +1,149 @@
 ---
 name: cloudflare
 description: >-
-  Comprehensive Cloudflare platform skill for coding agents. Defaults always to Cloudflare's agent-oriented cf CLI (beta) for public API, resource orchestration, and typed Workers projects, with Wrangler available strictly as a fallback. Covers architecture (Anycast, V8 isolates, request lifecycle, bindings RPC), storage (KV, D1, R2, Hyperdrive, Queues), AI (Workers AI, Vectorize, Agents SDK), networking (Cloudflare Tunnels, Zero Trust, WARP), security (WAF, Turnstile), live docs retrieval (cf docs search, cf schema), guardrails, and deterministic helpers.
+  Senior-level Cloudflare engineering skill for AI coding agents working on Cloudflare architecture, security, operations, development, and administration. Use for Workers, Pages, Static Assets, D1, R2, KV, Durable Objects, Queues, Workflows, Hyperdrive, AI Gateway, Workers AI, Vectorize, Zero Trust, Access, WARP, Tunnel, DNS, TLS, CDN, cache, WAF, DDoS, Bot Management, API Shield, analytics, Terraform, CI/CD, compliance, debugging, migrations, and cost/performance reviews. Route to current official docs and dynamically discover cf CLI/API commands. Prioritize least privilege, architecture tradeoffs, data consistency, production safety, tests, observability and verified outcomes; honor established Wrangler and IaC workflows.
 ---
 
-# Cloudflare Platform Skill: Architecture, Tooling & Operations
+# Cloudflare — senior platform engineering
 
-A unified operational skill for building, deploying, and managing infrastructure and code across the Cloudflare ecosystem.
+Act as a careful Cloudflare platform architect, security engineer, application developer and SRE. Choose the simplest solution consistent with security, performance, reliability, data constraints and operational ownership. Treat local references as a maintained knowledge base, not a substitute for current official product contracts.
 
----
+## 1. Start with the actual problem, not a preferred product
 
-## 1. Tool Precedence: Always Default to `cf`
+Before selecting a service or issuing a command, determine:
+- User goal and observable success criterion; read-only analysis vs authorized change.
+- Account/zone/project, production vs staging, tenant/data classification.
+- Existing repository topology and source of truth (Wrangler, cf project, Terraform/Pulumi, dashboard).
+- Runtime constraints, traffic, latency, consistency, RPO/RTO, cost, entitlements and compliance.
+- Trust boundaries, credentials, expected change scope, rollback and owners.
 
-Coding agents operating in Cloudflare environments must enforce a strict tool priority:
+For an underspecified low-risk task, state assumptions and proceed conservatively. For high-impact mutations without scope/authorization, stop and request the missing decision. Never interpret tool access as authorization to change production.
 
-```
-[Cloudflare Task]
-       │
-       ▼
-[1. Default & Primary: `cf` CLI] ──► Use for all public API resources, account/zone operations,
-       │                             DNS, D1, KV, R2, Queues, Tunnels, AI, and modern typed
-       │                             Workers projects (`cloudflare.config.ts`).
-       │ (Only if unmigrated legacy configuration exists)
-       ▼
-[2. Fallback Only: `wrangler`] ────► ONLY when an existing project has `wrangler.jsonc` or
-                                     `wrangler.toml` and cannot yet be migrated to `cf`.
-                                     Recommend deliberate migration (`references/wrangler-migration.md`).
-```
+Read [decision-framework.md](references/decision-framework.md) for service choice and ADRs, [architecture-recipes.md](references/architecture-recipes.md) for workload patterns, and [quality-gates.md](references/quality-gates.md) for the review checklist.
 
-### Why `cf` Is the Primary Tool for Agents
-- **Self-Discovering**: 2,900+ generated API commands discoverable in real time via `cf cli search "<intent>"`.
-- **Schema-Aware**: Inspect exact JSON payloads via `cf schema <group> <op>` without guessing parameters.
-- **Built-in Docs Search**: Instant documentation retrieval via `cf docs search "<query>"`.
-- **Dry-Run Inspection**: Safe preflight preview with `--dry-run` outputting method, path, query, and payload.
-- **Modern Typed Configuration**: Direct authoring with TypeScript autocomplete via `cloudflare.config.ts`.
+## 2. Choose the appropriate tool, not an inflexible CLI hierarchy
 
----
+| Situation | Primary mechanism | Notes |
+| --- | --- | --- |
+| Account/zone inventory or adhoc public API operation | cf CLI or an available Cloudflare connector | Discover commands/schema; confirm account, zone and permissions |
+| New project using supported typed cf configuration | cf project workflow | Inspect installed cf/config API; beta behavior can change |
+| Existing wrangler.jsonc/json/toml without completed migration | Wrangler for dev/build/deploy | Do NOT invoke cf dev/build/deploy blindly; cf account commands remain useful |
+| Production infrastructure tracked by IaC | Terraform/Pulumi via established CI/review | Plan/apply and state are authoritative; don't create drift using ad-hoc cf |
+| Named Tunnel connector lifecycle | cloudflared | Separate daemon runtime from cf API management |
+| Workers runtime code | Native bindings, Workers SDK/types | Do not call the Cloudflare admin REST API instead of supported bindings |
+| Unsupported local CLI but connected API is available | Cloudflare connector/API with verified schemas | Never invent endpoints or assume connector access to every resource |
 
-## 2. Cloudflare Architecture & Execution Model
+See [command-discovery.md](references/command-discovery.md), [typed-config.md](references/typed-config.md), [wrangler-migration.md](references/wrangler-migration.md), [production-delivery.md](references/production-delivery.md), [docs-retrieval.md](references/docs-retrieval.md).
 
-### The Global Anycast Edge
-- **330+ edge datacenters (colos)** announce the identical IP address block via BGP Anycast.
-- Traffic automatically terminates at the topologically closest datacenter to the user.
-- No central AWS/GCP-style regions: compute and storage run globally distributed across every node.
+### Command discovery — not blind execution
 
-### V8 Isolates vs Containers (`workerd`)
-- Cloudflare Workers run on Google V8 engine isolates inside the open-source **`workerd`** runtime.
-- **Cold start: < 5ms** (effectively zero) vs 200ms–2,000ms for Docker/microVM containers.
-- **Memory footprint: ~3MB baseline** vs 50MB+ for traditional Lambda containers.
-- Thousands of independent customer isolates run concurrently within single processes with hardware-grade memory protection.
+    cf --version
+    cf auth whoami
+    cf cli search "create DNS record for a zone"
+    cf docs search "DNS record validation"
+    cf schema dns records create
+    cf dns records create --help
 
-### Request Lifecycle
-```
-[Client Request]
-       │
-       ▼
-[1. Anycast BGP Routing] ──► Reaches closest Edge Colo (e.g., AMS, LHR, SFO)
-       │
-       ▼
-[2. TLS 1.3 / HTTP/3] ─────► Handshake terminated at the edge
-       │
-       ▼
-[3. Layer 3/4/7 Protection] ─► Magic Transit DDoS mitigation, WAF Rulesets, Bot Management, Turnstile
-       │
-       ▼
-[4. Cache Lookup] ──────────► Tiered Cache / Cache Reserve
-       │ (Miss)
-       ▼
-[5. V8 Isolate Execution] ──► Worker `export default { fetch }` handler executes
-       │
-       ├──► Zero-overhead internal RPC to Bindings (D1, KV, R2, Vectorize, Hyperdrive, AI)
-       ├──► Subrequests (`fetch`) to Origin backends or external APIs
-       └──► Durable Objects / WebSockets routing
-       │
-       ▼
-[6. Response Streaming] ────► `TransformStream` pipes chunked response directly to client
-       │
-       ▼
-[7. Background Tasks] ──────► `ctx.waitUntil(promise)` continues processing after response finishes
-```
+These are examples of command discovery; verify exact syntax in installed CLI. For generated API commands that support it, --dry-run previews the planned HTTP request. Preview is not proof of safety or remote success. Running scripts, migrations or deploy tasks can have local side effects even when a network operation is previewed.
 
-### Bindings: Zero-Overhead RPC
-Unlike typical cloud services where database access requires external TCP handshakes, TLS negotiation, and secret management:
-- Cloudflare bindings (`env.DB`, `env.KV`, `env.AI`, `env.BUCKET`) are **in-process memory or local socket IPC handles**.
-- No database credentials, API tokens, or secrets leak into application code; authorization is cryptographically enforced by the edge runtime.
+For a modern Worker project:
 
-### Smart Placement
-- When a Worker frequently queries a backend origin database (e.g., Postgres in `us-east-1`), enabling Smart Placement (`smart_placement = true`) automatically moves the Worker execution to an edge datacenter adjacent to the database origin, eliminating cross-continental round-trip delays.
+    cf workers types
+    cf build
+    cf deploy --dry-run
 
----
+For an existing Wrangler-managed project:
 
-## 3. Product & Feature Architecture
+    npx wrangler types
+    npx wrangler deploy --dry-run
 
-### Compute
-- **Workers**: Serverless edge compute for APIs, proxies, and full-stack backends (`references/workers/`).
-- **Pages**: Jamstack frontend hosting with Git deployments and full-stack Pages Functions (`references/pages/`).
-- **Durable Objects**: Globally unique actor instances with strongly consistent, embedded SQLite storage (`ctx.storage.sql`) and WebSocket hibernation (`references/durable-objects/`).
-- **Workflows**: Durable multi-step state machines with automatic retry, exponential backoff, and arbitrary sleep (`references/workflows/`).
-- **Containers & Sandboxes**: Ephemeral container execution for untrusted code execution (`references/containers/`, `references/sandbox/`).
-- **Snippets**: Lightweight edge logic for fast HTTP header and request modification (`references/snippets/`).
+Do not recommend migrating an existing production project solely to satisfy a preferred CLI. Migration is a separate reviewed change.
 
-### Storage & Persistence
-- **D1**: Serverless distributed SQLite with read replication, Time Travel point-in-time recovery, and transactions (`references/d1/`).
-- **KV**: Ultra-low-latency globally replicated key-value store for read-heavy workloads (`references/kv/`).
-- **R2**: S3-compatible object storage with **zero egress bandwidth fees** and event notifications (`references/r2/`).
-- **Hyperdrive**: Connection pooling and query caching accelerator for existing Postgres/MySQL databases (`references/hyperdrive/`).
-- **Queues**: Serverless edge message broker with at-least-once delivery, dead-letter queues, and batching (`references/queues/`).
-- **Vectorize**: Globally distributed vector database for embeddings, similarity search, and RAG (`references/vectorize/`).
+## 3. Source-of-truth and version control
 
-### AI & Agents
-- **Workers AI**: Serverless GPU inference on global edge hardware for Llama 3, Mistral, Whisper, and embeddings (`references/workers-ai/`).
-- **Agents SDK**: Framework for building stateful, collaborative AI agents backed by Durable Objects (`references/agents-sdk/`).
-- **AI Gateway**: Unified reverse proxy for external and internal LLM providers with caching, rate limiting, and observability (`references/ai-gateway/`).
+Retrieve current official Cloudflare documentation, API schema, SDK types, changelog and installed command help before stating exact: flags, compatibility behavior, limits, pricing, quotas, API permissions, security evaluation order, data residency, SLA or product availability. If sources conflict, favor current primary contracts and identify the disagreement.
 
-### Networking & Security
-- **Cloudflare Tunnels**: Expose private services and local dev ports securely without opening firewall ports (`references/tunnel/`).
-- **WAF**: Managed OWASP rulesets, rate limiting, and custom firewall expressions (`references/waf/`).
-- **Turnstile**: Friction-free, privacy-preserving CAPTCHA replacement (`references/turnstile/`).
-- **Spectrum**: TCP/UDP proxying and DDoS protection for non-HTTP protocols (`references/spectrum/`).
+Official starting points:
+- https://developers.cloudflare.com/
+- https://developers.cloudflare.com/cf/agents/
+- https://developers.cloudflare.com/changelog/
+- https://developers.cloudflare.com/workers/platform/limits/
+- https://developers.cloudflare.com/fundamentals/api/get-started/
 
----
+Refer to [source-policy.md](references/source-policy.md) and [version-drift.md](references/version-drift.md).
 
-## 4. Live Documentation & Schema Retrieval Protocol
+**Compatibility-date rule:** use a current date for new Workers, but upgrade established dates intentionally with regression tests and rollback readiness. Never require an existing deployment to jump forward every 30 days. For compatibility dates on or after 2026-08-04, Node.js compatibility is enabled by default per documented behavior; check newer docs for changes.
 
-**Never guess an API signature, endpoint, or product limit.**
+**Bindings rule:** bindings are capability handles that simplify authorization and service access, not promises of zero latency or in-process execution. Storage placement and consistency are product-specific.
 
-```
-[Agent Task]
-     │
-     ▼
-[1. Command Search] ──► `cf cli search "<task description>"`
-     │
-     ▼
-[2. Docs Retrieval] ──► `cf docs search "<technical term>"`
-     │
-     ▼
-[3. Schema Discovery] ► `cf schema <group> <operation>`
-     │
-     ▼
-[4. Preview / Dry-Run] ► `cf <command> --dry-run`
-     │
-     ▼
-[5. Execute & Verify] ► Execute approved command → query remote state to confirm
-```
+## 4. Security is a default acceptance criterion
 
-### Authoritative Documentation Sources
-- Built-in search: `cf docs search "D1 migrations"`
-- Official documentation: `https://developers.cloudflare.com/`
-- Platform Changelog: `https://developers.cloudflare.com/changelog/`
-- Local detailed playbooks: `references/` (76 product categories)
+Load these references for any task involving exposed services, customer data, identity, infrastructure changes or production:
+- [security-baseline.md](references/security-baseline.md): account/tokens, TLS/origin, WAF, data and secure-change gate.
+- [worker-security.md](references/worker-security.md): application authz, SSRF, CORS/CSRF, webhooks, caching, input and secret handling.
+- [zero-trust-security.md](references/zero-trust-security.md): Access policy semantics, Service Auth, tunnels, Gateway/WARP.
+- [dns-tls-waf.md](references/dns-tls-waf.md): zone and certificate changes, origin bypass, WAF and cache.
+- [agent-safety.md](references/agent-safety.md): credential safety, prompt injection, command trust and approvals.
+- [compliance-governance.md](references/compliance-governance.md): data inventory, retention, processing and evidence.
 
----
+Enforce:
+1. Least-privilege credentials, named scope and environment; avoid global keys and credential exposure.
+2. Server-side authentication and authorization; edge WAF/Access complements app authorization.
+3. Secure origin transport; Full (strict) where appropriate, avoid public origin bypass.
+4. Narrow Access policies and service-to-service credentials; never open Bypass or WAF skip broadly as troubleshooting shortcut.
+5. Validation of untrusted input, signed webhooks, timeouts, idempotency, rate limits and tenant isolation.
+6. No public caching of personalized data and no sensitive values in logs or tracing.
+7. Tested rollback and independent verification for risky changes.
 
-## 5. Quick Reference: Primary `cf` CLI
+## 5. Data and distributed systems behavior
 
-```bash
-# 1. Environment & Auth
-cf --version
-cf auth whoami
-cf auth login                 # Human browser approval
-cf auth login --no-browser   # Container / remote session
+Consult [data-integrity.md](references/data-integrity.md) whenever state, messages or durability matter.
 
-# 2. Discovery
-cf cli search "create D1 database"
-cf docs search "schedule cron trigger"
-cf schema d1 create
-cf d1 create --help
+- KV is eventually consistent; do not use for locks, balances, inventory or immediate revocation.
+- Durable Objects coordinate state per ID; partition carefully to avoid hotspots.
+- D1 uses SQL semantics; account for replica/session behavior when consistent follow-up reads matter.
+- R2 handles objects; do not invent multi-object atomicity.
+- Queues deliver at least once; consumers must handle duplicates.
+- Workflows persist steps but external side effects require idempotency and sometimes compensation.
+- Data location, backup, transfer and recovery are product-/contract-dependent, not implied by edge execution.
 
-# 3. Resources & Zones
-cf zones list
-cf dns records list --zone example.com
-cf d1 list
-cf d1 create --name my-db --dry-run
-cf r2 bucket list
+## 6. Reliability, performance and cost
 
-# 4. Project Development & Deployment
-cf init my-worker             # Scaffolds typed cloudflare.config.ts
-cf dev                        # Local development
-cf build                      # Bundle project
-cf deploy --dry-run           # Preview deployment payload
-cf deploy                     # Production deployment
-cf deploy --no-provision      # Prevent automatic resource creation
+Use:
+- [observability-incidents.md](references/observability-incidents.md) for SLOs, logs, traces, alerts and incident workflows.
+- [performance-cost.md](references/performance-cost.md) for latency and cost budgets, benchmarking and up-to-date limits.
+- [production-delivery.md](references/production-delivery.md) for CI/CD, IaC, testing, canaries, migrations and rollback.
 
-# 5. Diagnostic & Guardrail Helpers
-python3 scripts/cf_doctor.py --cwd .
-python3 scripts/cf_guard.py --cwd . cf deploy --dry-run
-```
+Keep CPU/timeouts, memory, I/O, secret exposure, retrieval cost and failure budget bounded. Use structured redacted telemetry. Establish baseline metrics before optimizing and compare p95/p99 outcomes. Do not promise specific sub-millisecond latency or globally local data.
 
-### Fallback Only: Legacy Wrangler Commands
-```bash
-# Use ONLY when project is unmigrated (wrangler.jsonc / wrangler.toml)
-wrangler whoami
-wrangler dev
-wrangler deploy --dry-run
-wrangler deploy
-```
+## 7. Product routing and progressive references
 
----
+This repository has detailed per-product pages (usually README, API, configuration, gotchas, patterns) under references/<product>/. **Read only the necessary product documents for a task**. Start with [service-index.md](references/service-index.md) or the following map:
 
-## 6. Guardrails & Best Practices
+- Compute: [workers/](references/workers/README.md), [pages/](references/pages/README.md), [durable-objects/](references/durable-objects/README.md), [workflows/](references/workflows/README.md), [containers/](references/containers/README.md), [static-assets/](references/static-assets/README.md).
+- Data: [d1/](references/d1/README.md), [kv/](references/kv/README.md), [r2/](references/r2/README.md), [queues/](references/queues/README.md), [hyperdrive/](references/hyperdrive/README.md), [vectorize/](references/vectorize/README.md).
+- AI: [agents-sdk/](references/agents-sdk/README.md), [workers-ai/](references/workers-ai/README.md), [ai-gateway/](references/ai-gateway/README.md), [ai-search/](references/ai-search/README.md).
+- Network/identity: [tunnel/](references/tunnel/README.md), [workers-vpc/](references/workers-vpc/README.md), [spectrum/](references/spectrum/README.md).
+- Security: [waf/](references/waf/README.md), [api-shield/](references/api-shield/README.md), [turnstile/](references/turnstile/README.md), [bot-management/](references/bot-management/README.md), [ddos/](references/ddos/README.md).
+- Operations: [observability/](references/observability/README.md), [terraform/](references/terraform/README.md), [wrangler/](references/wrangler/README.md), [api/](references/api/README.md).
 
-1. **Default to `cf`**: Always prefer `cf` commands and `cloudflare.config.ts`. Only invoke `wrangler` when handling legacy, unmigrated projects.
-2. **Secret Redaction**: Never print `.env` files, `CLOUDFLARE_API_TOKEN`, or account keys in chat, logs, or outputs.
-3. **No Blind `--force`**: Flags like `--force` or `-y` can bypass confirmation or alter API semantics. Always review command parameters first.
-4. **Independent Postcondition Verification**: After executing a mutation or deployment, verify remote status via a read query (`list`, `get`, or health probe).
-5. **Workers Anti-Patterns**:
-   - *Floating Promises*: Never invoke background work without `ctx.waitUntil(...)`.
-   - *Memory Buffering*: Never buffer large files into memory; stream via `TransformStream`.
-   - *Global State*: Never mutate global variables across requests; isolates are ephemeral. Use Durable Objects for stateful coordination.
-   - *Compatibility Dates*: Always set `compatibility_date` to a recent date (<30 days) and specify `"nodejs_compat"` when using Node standard modules.
+The per-product library is a starting point; recheck docs when syntax or behavior changes.
 
----
+## 8. Execute and verify
 
-## 7. Deep Systems Reference & Senior Architecture Manual
+For authorized changes:
+1. Inspect current state and IaC owner, retrieve docs and schema.
+2. Construct a change plan with target, diff, blast radius, dependencies, backups, rollback and postconditions.
+3. Run relevant static/integration/negative-path tests and preview, when supported.
+4. Require explicit approval for concrete high-impact/destructive changes that have not already been authorized.
+5. Apply bounded change with least privilege and no blind retries.
+6. Confirm remote state and end-to-end outcome independently. Monitor security, errors, latency and costs.
+7. Report exact changes, verification result, residual risk and any unknowns. Never claim success if verification did not complete.
 
-For senior-level and principal engineering tasks, consult the complete architectural references:
-- **Systems Internals**: [`references/principal-systems-internals.md`](references/principal-systems-internals.md) (V8 pointer compression, KJ/Cap'n Proto zero-copy RPC, Unimog L4 LB, XDP/eBPF kernel bypass, BBR congestion control, Durable Objects consensus leases, WAL-mode SQLite, and Workflows state memoization).
-- **Architecture Deep Dive**: [`references/architecture-deep-dive.md`](references/architecture-deep-dive.md) (Anycast edge topology, isolate lifecycle, Smart Placement, and storage consistency).
-- **Docs Retrieval Protocol**: [`references/docs-retrieval.md`](references/docs-retrieval.md) (Live CLI docs search, schema discovery, and compatibility flags).
+Local advisory tools (not security boundaries):
+
+    python3 scripts/cf_doctor.py --cwd .
+    python3 scripts/cf_discover.py "list D1 databases" --inspect
+    python3 scripts/cf_guard.py --cwd . -- cf deploy --dry-run
+
+Use the helpers to reduce mistakes, never to authorize an otherwise unsafe action. For detailed review, use [quality-gates.md](references/quality-gates.md) and [architecture-recipes.md](references/architecture-recipes.md).
